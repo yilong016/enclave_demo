@@ -189,14 +189,16 @@ run_demo() {
     source "$VENV_DIR/bin/activate"
     
     print_info "发送签名请求到 Enclave..."
-    print_info "消息: $DEMO_MESSAGE"
+    print_info "敏感数据: My credit card: 1234-5678-9012-3456"
+    print_info "交易数据: Transfer \$1000 from Alice to Bob"
     echo ""
     
     # 运行 parent 应用
     cd parent
     python3 parent_app.py \
         --cid "$ENCLAVE_CID" \
-        --message "$DEMO_MESSAGE" \
+        --sensitive-data "My credit card: 1234-5678-9012-3456" \
+        --transaction "Transfer \$1000 from Alice to Bob" \
         --region "$REGION"
     
     DEMO_RESULT=$?

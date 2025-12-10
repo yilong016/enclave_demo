@@ -322,7 +322,7 @@ aws s3 cp s3://your-bucket-name/kms_key_id.txt .
 # 运行演示
 cd parent
 source ../venv/bin/activate
-python parent_app.py --message "Hello from Enclave!"
+python parent_app.py --sensitive-data "My credit card: 1234-5678" --transaction "Transfer $100"
 ```
 
 ### 一键演示（环境已配置）
