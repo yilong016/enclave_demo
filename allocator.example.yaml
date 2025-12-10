@@ -1,0 +1,138 @@
+# Nitro Enclaves 资源分配器配置示例
+# 此文件定义了为 Enclave 预留的 CPU 和内存资源
+# 
+# 使用方法:
+# 1. 复制此文件到 /etc/nitro_enclaves/allocator.yaml
+#    sudo cp allocator.example.yaml /etc/nitro_enclaves/allocator.yaml
+# 
+# 2. 根据需要修改配置
+# 
+# 3. 重启资源分配器服务
+#    sudo systemctl restart nitro-enclaves-allocator.service
+# 
+# 4. 验证配置
+#    cat /sys/module/nitro_enclaves/parameters/ne_cpus
+#    cat /sys/module/nitro_enclaves/parameters/ne_mem_size
+
+# ============================================
+# CPU 配置
+# ============================================
+
+# 为 Enclave 预留的 CPU 核心数
+# 
+# 注意事项:
+# - 必须是偶数（Nitro Enclaves 要求）
+# - 不能超过实例总 CPU 的 50%
+# - 至少需要 2 个 vCPU
+# - 预留的 CPU 将不可用于主机系统
+# 
+# 示例:
+# - c6i.xlarge (4 vCPU): 最多可以分配 2 个 vCPU
+# - c6i.2xlarge (8 vCPU): 最多可以分配 4 个 vCPU
+# - c6i.4xlarge (16 vCPU): 最多可以分配 8 个 vCPU
+
+cpu_count: 2
+
+# ============================================
+# 内存配置
+# ============================================
+
+# 为 Enclave 预留的内存大小（MB）
+# 
+# 注意事项:
+# - 不能超过实例总内存的 50%
+# - 至少需要 64 MB
+# - 建议至少 512 MB 用于运行 Python 应用
+# - 预留的内存将不可用于主机系统
+# 
+# 示例:
+# - c6i.xlarge (8 GB): 最多可以分配 4096 MB
+# - c6i.2xlarge (16 GB): 最多可以分配 8192 MB
+# - c6i.4xlarge (32 GB): 最多可以分配 16384 MB
+
+memory_mib: 512
+
+# ============================================
+# 配置建议
+# ============================================
+
+# 开发/测试环境（轻量级）:
+# cpu_count: 2
+# memory_mib: 512
+
+# 生产环境（标准）:
+# cpu_count: 4
+# memory_mib: 2048
+
+# 生产环境（高性能）:
+# cpu_count: 8
+# memory_mib: 4096
+
+# ============================================
+# 性能考虑
+# ============================================
+
+# CPU:
+# - 更多 CPU 可以提高并发处理能力
+# - 对于 I/O 密集型应用，2 个 vCPU 通常足够
+# - 对于 CPU 密集型应用，考虑分配更多 vCPU
+
+# 内存:
+# - Python 应用通常需要较多内存
+# - 512 MB 适合简单应用
+# - 1024 MB 适合中等复杂度应用
+# - 2048 MB 或更多适合复杂应用或需要缓存的场景
+
+# ============================================
+# 故障排查
+# ============================================
+
+# 如果 Enclave 启动失败，可能是资源配置问题:
+
+# 1. 检查当前配置:
+#    cat /etc/nitro_enclaves/allocator.yaml
+
+# 2. 检查实际分配的资源:
+#    cat /sys/module/nitro_enclaves/parameters/ne_cpus
+#    cat /sys/module/nitro_enclaves/parameters/ne_mem_size
+
+# 3. 检查实例总资源:
+#    nproc  # 查看 CPU 核心数
+#    free -m  # 查看内存大小
+
+# 4. 检查服务状态:
+#    sudo systemctl status nitro-enclaves-allocator.service
+
+# 5. 查看服务日志:
+#    sudo journalctl -u nitro-enclaves-allocator.service
+
+# ============================================
+# 动态调整
+# ============================================
+
+# 如果需要在运行时调整资源分配:
+
+# 1. 停止所有运行中的 Enclave:
+#    nitro-cli terminate-enclave --enclave-id <ENCLAVE_ID>
+
+# 2. 修改配置文件:
+#    sudo nano /etc/nitro_enclaves/allocator.yaml
+
+# 3. 重启分配器服务:
+#    sudo systemctl restart nitro-enclaves-allocator.service
+
+# 4. 验证新配置:
+#    cat /sys/module/nitro_enclaves/parameters/ne_cpus
+#    cat /sys/module/nitro_enclaves/parameters/ne_mem_size
+
+# 5. 重新启动 Enclave:
+#    ./scripts/start_enclave.sh
+
+# ============================================
+# 安全建议
+# ============================================
+
+# - 只分配应用实际需要的资源
+# - 为主机系统保留足够的资源
+# - 在生产环境中监控资源使用情况
+# - 定期审查和优化资源分配

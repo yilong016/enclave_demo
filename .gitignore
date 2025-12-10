@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+*.egg-info/
+
+# Enclave 构建产物
+enclave.eif
+*.eif
+
+# 临时文件和配置
+enclave_cid.txt
+enclave_pcr0.txt
+kms_key_id.txt
+*.tar.gz
+
+# 备份文件
+*.backup
+*.old
+README.md.old
+README.md.backup
+
+# AWS 凭证
+.aws/
+*.pem
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 日志
+*.log
+
+# Docker
+.dockerignore

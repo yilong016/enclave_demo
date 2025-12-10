@@ -1,0 +1,79 @@
+{
+  "_comment": "EC2 Enclave KMS 签名演示 - 配置文件示例",
+  "_usage": "复制此文件为 config.json 并根据您的环境修改配置",
+  
+  "aws": {
+    "_comment": "AWS 相关配置",
+    "region": "us-east-1",
+    "kms_key_id": "12345678-1234-1234-1234-123456789012",
+    "_kms_key_id_note": "KMS 密钥 ID，可以从 kms_key_id.txt 文件获取或使用密钥别名",
+    "kms_key_alias": "alias/enclave-signing-demo",
+    "_kms_key_alias_note": "KMS 密钥别名，可以代替 key_id 使用"
+  },
+  
+  "enclave": {
+    "_comment": "Enclave 相关配置",
+    "cid": 16,
+    "_cid_note": "Enclave CID，启动 Enclave 后自动分配，可以从 enclave_cid.txt 获取",
+    "port": 5000,
+    "_port_note": "vsock 通信端口，必须与 Enclave 应用中的端口一致",
+    "cpu_count": 2,
+    "_cpu_count_note": "分配给 Enclave 的 vCPU 数量",
+    "memory_mb": 512,
+    "_memory_mb_note": "分配给 Enclave 的内存大小（MB）",
+    "debug_mode": true,
+    "_debug_mode_note": "是否启用调试模式，生产环境应设置为 false"
+  },
+  
+  "communication": {
+    "_comment": "通信相关配置",
+    "timeout_seconds": 30,
+    "_timeout_note": "vsock 连接超时时间（秒）",
+    "retry_count": 3,
+    "_retry_note": "连接失败时的重试次数",
+    "retry_delay_seconds": 2,
+    "_retry_delay_note": "重试之间的延迟时间（秒）"
+  },
+  
+  "kms": {
+    "_comment": "KMS 签名相关配置",
+    "key_spec": "RSA_2048",
+    "_key_spec_note": "密钥规格，支持: RSA_2048, RSA_3072, RSA_4096, ECC_NIST_P256, ECC_NIST_P384, ECC_NIST_P521",
+    "signing_algorithm": "RSASSA_PKCS1_V1_5_SHA_256",
+    "_signing_algorithm_note": "签名算法，必须与密钥规格匹配",
+    "message_type": "RAW",
+    "_message_type_note": "消息类型，RAW 或 DIGEST"
+  },
+  
+  "logging": {
+    "_comment": "日志相关配置",
+    "level": "INFO",
+    "_level_note": "日志级别: DEBUG, INFO, WARNING, ERROR, CRITICAL",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "_format_note": "日志格式",
+    "file": null,
+    "_file_note": "日志文件路径，null 表示输出到控制台"
+  },
+  
+  "demo": {
+    "_comment": "演示相关配置",
+    "default_message": "Hello from EC2 Nitro Enclave Demo!",
+    "_default_message_note": "默认的待签名消息",
+    "show_signature": true,
+    "_show_signature_note": "是否在输出中显示完整的签名（Base64 编码）",
+    "show_timing": true,
+    "_show_timing_note": "是否显示各步骤的耗时"
+  },
+  
+  "paths": {
+    "_comment": "文件路径配置",
+    "eif_file": "enclave.eif",
+    "_eif_file_note": "Enclave 镜像文件路径",
+    "cid_file": "enclave_cid.txt",
+    "_cid_file_note": "保存 Enclave CID 的文件",
+    "pcr0_file": "enclave_pcr0.txt",
+    "_pcr0_file_note": "保存 Enclave PCR0 哈希的文件",
+    "key_id_file": "kms_key_id.txt",
+    "_key_id_file_note": "保存 KMS 密钥 ID 的文件"
+  }
+}
