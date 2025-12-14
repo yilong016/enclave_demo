@@ -1,0 +1,108 @@
+# 保守优化版 Dockerfile
+# 使用 Amazon Linux 2023 替代 Amazon Linux 2
+# 保持兼容性的同时进行体积优化
+
+# ========== 构建阶段：Amazon Linux 2023 ==========
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023 as builder
+
+# 安装构建依赖（使用 dnf 替代 yum）
+RUN dnf update -y && \
+    dnf install -y cmake gcc git tar make gcc-c++ go ninja-build && \
+    dnf clean all
+
+# 安装 Rust
+RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --profile minimal --default-toolchain stable
+
+WORKDIR /tmp/crt-builder
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# 构建 AWS C 库（优化：减少层数，清理临时文件）
+RUN git clone --depth 1 -b v1.12.0 https://github.com/awslabs/aws-lc.git aws-lc && \
+    cmake3 -DCMAKE_PREFIX_PATH=/usr -DCMAKE_INSTALL_PREFIX=/usr -GNinja -DBUILD_TESTING=0 -S aws-lc -B aws-lc/build && \
+    go env -w GOPROXY=direct && \
+    cmake3 --build aws-lc/build --parallel $(nproc) --target install && \
+    rm -rf aws-lc
+
+RUN git clone --depth 1 -b v1.3.46 https://github.com/aws/s2n-tls.git && \
+    cmake3 -DCMAKE_PREFIX_PATH=/usr -DBUILD_TESTING=0 -DCMAKE_INSTALL_PREFIX=/usr -S s2n-tls -B s2n-tls/build && \
+    cmake3 --build s2n-tls/build --parallel $(nproc) --target install && \
+    rm -rf s2n-tls
+
+RUN git clone --depth 1 -b v0.8.0 https://github.com/awslabs/aws-c-common.git && \
+    cmake3 -DCMAKE_PREFIX_PATH=/usr -DBUILD_TESTING=0 -DCMAKE_INSTALL_PREFIX=/usr -GNinja -S aws-c-common -B aws-c-common/build && \
+    cmake3 --build aws-c-common/build --parallel $(nproc) --target install && \
+    rm -rf aws-c-common
+
+RUN git clone --depth 1 -b v0.1.2 https://github.com/awslabs/aws-c-sdkutils.git && \
+    cmake3 -DCMAKE_PREFIX_PATH=/usr -DBUILD_TESTING=0 -DCMAKE_INSTALL_PREFIX=/usr -GNinja -S aws-c-sdkutils -B aws-c-sdkutils/build && \
+    cmake3 --build aws-c-sdkutils/build --parallel $(nproc) --target install && \
+    rm -rf aws-c-sdkutils
+
+RUN git clone --depth 1 -b v0.5.18 https://github.com/awslabs/aws-c-cal.git && \
+    cmake3 -DCMAKE_PREFIX_PATH=/usr -DBUILD_TESTING=0 -DCMAKE_INSTALL_PREFIX=/usr -GNinja -S aws-c-cal -B aws-c-cal/build && \
+    cmake3 --build aws-c-cal/build --parallel $(nproc) --target install && \
+    rm -rf aws-c-cal
+
+RUN git clone --depth 1 -b v0.11.0 https://github.com/awslabs/aws-c-io.git && \
+    cmake3 -DUSE_VSOCK=1 -DCMAKE_PREFIX_PATH=/usr -DBUILD_TESTING=0 -DCMAKE_INSTALL_PREFIX=/usr -GNinja -S aws-c-io -B aws-c-io/build && \
+    cmake3 --build aws-c-io/build --parallel $(nproc) --target install && \
+    rm -rf aws-c-io
+
+RUN git clone --depth 1 -b v0.2.14 https://github.com/awslabs/aws-c-compression.git && \
+    cmake3 -DCMAKE_PREFIX_PATH=/usr -DBUILD_TESTING=0 -DCMAKE_INSTALL_PREFIX=/usr -GNinja -S aws-c-compression -B aws-c-compression/build && \
+    cmake3 --build aws-c-compression/build --parallel $(nproc) --target install && \
+    rm -rf aws-c-compression
+
+RUN git clone --depth 1 -b v0.7.6 https://github.com/awslabs/aws-c-http.git && \
+    cmake3 -DCMAKE_PREFIX_PATH=/usr -DBUILD_TESTING=0 -DCMAKE_INSTALL_PREFIX=/usr -GNinja -S aws-c-http -B aws-c-http/build && \
+    cmake3 --build aws-c-http/build --parallel $(nproc) --target install && \
+    rm -rf aws-c-http
+
+RUN git clone --depth 1 -b v0.6.15 https://github.com/awslabs/aws-c-auth.git && \
+    cmake3 -DCMAKE_PREFIX_PATH=/usr -DBUILD_TESTING=0 -DCMAKE_INSTALL_PREFIX=/usr -GNinja -S aws-c-auth -B aws-c-auth/build && \
+    cmake3 --build aws-c-auth/build --parallel $(nproc) --target install && \
+    rm -rf aws-c-auth
+
+RUN git clone --depth 1 -b json-c-0.16-20220414 https://github.com/json-c/json-c.git && \
+    cmake3 -DCMAKE_PREFIX_PATH=/usr -DBUILD_TESTING=0 -DCMAKE_INSTALL_PREFIX=/usr -DBUILD_SHARED_LIBS=OFF -GNinja -S json-c -B json-c/build && \
+    cmake3 --build json-c/build --parallel $(nproc) --target install && \
+    rm -rf json-c
+
+RUN git clone --depth 1 -b v0.4.0 https://github.com/aws/aws-nitro-enclaves-nsm-api.git && \
+    cd aws-nitro-enclaves-nsm-api && \
+    cargo build --release --jobs $(nproc) -p nsm-lib && \
+    mv target/release/libnsm.so /usr/lib64/ && \
+    mv target/release/nsm.h /usr/include/ && \
+    cd .. && rm -rf aws-nitro-enclaves-nsm-api
+
+RUN git clone --depth 1 https://github.com/aws/aws-nitro-enclaves-sdk-c.git && \
+    cmake3 -DCMAKE_PREFIX_PATH=/usr -DCMAKE_INSTALL_PREFIX=/usr -GNinja -S aws-nitro-enclaves-sdk-c -B aws-nitro-enclaves-sdk-c/build && \
+    cmake3 --build aws-nitro-enclaves-sdk-c/build --parallel $(nproc) --target install && \
+    rm -rf aws-nitro-enclaves-sdk-c
+
+# ========== 运行阶段：Amazon Linux 2023 最小化 ==========
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023
+
+# 安装运行时依赖（最小化安装）
+RUN dnf install -y python3 python3-pip --setopt=install_weak_deps=False && \
+    pip3 install --no-cache-dir cryptography && \
+    dnf clean all && \
+    rm -rf /var/cache/dnf
+
+# 从构建阶段复制必要文件
+COPY --from=builder /usr/lib64/libnsm.so /usr/lib64/
+COPY --from=builder /usr/bin/kmstool_enclave_cli /usr/bin/
+COPY --from=builder /etc/pki/tls/certs/* /etc/pki/tls/certs/
+
+# 复制应用代码
+COPY kms-enclave-app.py /app/
+WORKDIR /app
+
+# 设置环境变量
+ARG KMS_KEY_ID
+ENV KMS_KEY_ID=${KMS_KEY_ID}
+ENV LD_LIBRARY_PATH=/usr/lib64
+ENV VSOCK_PORT=5000
+ENV PYTHONUNBUFFERED=1
+
+CMD ["python3", "/app/kms-enclave-app.py"]
