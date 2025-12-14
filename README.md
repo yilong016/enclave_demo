@@ -11,7 +11,7 @@
 - **requirements.txt** - Python 依赖列表（内容：`boto3`）
 
 ### 2. 文档文件（必需）
-- **implement.md** - 本实施文档
+- **README.md** - 本实施文档
 
 ### 3. 文件放置位置
 所有文件应放在同一目录下，例如：
@@ -21,7 +21,7 @@
 ├── kms-client.py
 ├── Dockerfile.kms
 ├── requirements.txt
-└── implement.md
+└── README.md
 ```
 
 ---
@@ -411,7 +411,7 @@ nitro-cli run-enclave --eif-path kms-enclave.eif --cpu-count 4 --memory 2048 --d
 ## 文件清单
 
 ### 提供的文件（部署前）
-- `implement.md`: 本实施文档
+- `README.md`: 本实施文档
 - `kms-enclave-app.py`: Enclave 应用（支持加密和解密）
 - `kms-client.py`: Parent instance 客户端（支持加密和解密）
 - `Dockerfile.kms`: Docker 构建文件
