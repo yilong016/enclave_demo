@@ -85,7 +85,13 @@ Successfully allocated Nitro Enclaves resources: 2048 MiB, 4 CPUs
 
 ## 技术架构流程图
 
-![技术架构流程图](flow.png)
+### 加密流程
+
+![加密流程图](encryption-flow.png)
+
+### 解密流程
+
+![解密流程图](decrypt-flow.png)
 
 ## 关键技术点
 
