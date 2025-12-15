@@ -13,26 +13,35 @@ participant "KMS" as KMS
 Parent -> Enclave: (1) 发送加密数据+签名+\n加密的 data key+credentials\n(vsock)
 activate Enclave
 
-Enclave -> Enclave: (2) KMS Decrypt\n(通过 vsock-proxy)\n(附带 attestation doc)
-Enclave -> Parent: (3) 转发 KMS 请求\n(vsock-proxy)
+Enclave -> Enclave: (2) 生成临时密钥对\n(公钥+私钥)
+note right: 私钥保存在 enclave 内存\n永不离开 enclave
+
+Enclave -> Enclave: (3) 构造 Attestation Document\n(包含公钥和 PCR 值)
+
+Enclave -> Parent: (4) KMS Decrypt 请求\n(通过 vsock-proxy)\n(附带 attestation doc)
 activate Parent
 
-Parent -> KMS: (4) 转发到 KMS
+Parent -> KMS: (5) 转发到 KMS
 activate KMS
+note right: Parent Instance\n无法解密 data key
 
-KMS --> Parent: (5) 返回解密的 data key
+KMS -> KMS: (6) 验证 attestation\n和 PCR 值
+
+KMS --> Parent: (7) 返回用 enclave 公钥\n加密的 data key
 deactivate KMS
+note left: 加密的 data key\n在传输过程中安全
 
-Parent --> Enclave: (6) 返回到 enclave
+Parent --> Enclave: (8) 转发加密的 data key
 deactivate Parent
+note left: Parent Instance\n无法获取明文
 
-Enclave -> Enclave: (7) 获取明文 data key\n(kmstool 自动完成)
+Enclave -> Enclave: (9) 用私钥解密 data key\n(kmstool 自动完成)
 
-Enclave -> Enclave: (8) 解密数据\n(AES-256-GCM)
+Enclave -> Enclave: (10) 解密数据\n(AES-256-GCM)
 
-Enclave -> Enclave: (9) 验证签名\n(HMAC-SHA256)
+Enclave -> Enclave: (11) 验证签名\n(HMAC-SHA256)
 
-Enclave --> Parent: (10) 返回解密结果和\n签名验证状态 (vsock)
+Enclave --> Parent: (12) 返回解密结果和\n签名验证状态 (vsock)
 deactivate Enclave
 
 @enduml
