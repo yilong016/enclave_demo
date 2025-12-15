@@ -1,0 +1,38 @@
+@startuml
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam sequenceMessageAlign center
+skinparam BoxPadding 10
+
+title Nitro Enclaves KMS 加密签名技术架构流程
+
+participant "Parent Instance" as Parent
+participant "Enclave" as Enclave
+participant "KMS" as KMS
+
+Parent -> Enclave: (1) 发送消息+credentials\n(vsock)
+activate Enclave
+
+Enclave -> Enclave: (2) KMS GenerateDataKey\n(通过 vsock-proxy)\n(附带 attestation doc)
+Enclave -> Parent: (3) 转发 KMS 请求\n(vsock-proxy)
+activate Parent
+
+Parent -> KMS: (4) 转发到 KMS
+activate KMS
+
+KMS --> Parent: (5) 返回加密的 data key
+deactivate KMS
+
+Parent --> Enclave: (6) 返回到 enclave
+deactivate Parent
+
+Enclave -> Enclave: (7) 解密 data key\n(kmstool 自动完成)
+
+Enclave -> Enclave: (8) 加密文本\n(AES-256-GCM)
+
+Enclave -> Enclave: (9) 签名文本\n(HMAC-SHA256)
+
+Enclave --> Parent: (10) 返回结果 (vsock)
+deactivate Enclave
+
+@enduml

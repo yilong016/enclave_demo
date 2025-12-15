@@ -83,33 +83,9 @@ Successfully allocated Nitro Enclaves resources: 2048 MiB, 4 CPUs
 - 验证 HMAC-SHA256 签名
 - 通过 vsock 返回解密结果和签名验证状态给 parent instance
 
-## 技术架构
+## 技术架构流程图
 
-```
-Parent Instance                    Enclave                         KMS
-      |                               |                              |
-      |---(1) 发送消息+credentials--->|                              |
-      |       (vsock)                 |                              |
-      |                               |---(2) KMS GenerateDataKey -->|
-      |                               |    (通过 vsock-proxy)        |
-      |                               |    (附带 attestation doc)    |
-      |<--(3) 转发 KMS 请求 ---------|                              |
-      |    (vsock-proxy)              |                              |
-      |----------------------------------(4) 转发到 KMS ------------->|
-      |                               |                              |
-      |<---------------------------------(5) 返回加密的 data key ----|
-      |                               |                              |
-      |---(6) 返回到 enclave -------->|                              |
-      |                               |                              |
-      |                               |---(7) 解密 data key          |
-      |                               |    (kmstool 自动完成)        |
-      |                               |                              |
-      |                               |---(8) 加密文本 (AES-256-GCM) |
-      |                               |                              |
-      |                               |---(9) 签名文本 (HMAC-SHA256) |
-      |                               |                              |
-      |<--(10) 返回结果 (vsock)-------|                              |
-```
+![技术架构流程图](flow.png)
 
 ## 关键技术点
 
