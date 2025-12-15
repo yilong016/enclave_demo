@@ -4,7 +4,7 @@ skinparam backgroundColor #FFFFFF
 skinparam sequenceMessageAlign center
 skinparam BoxPadding 10
 
-title Nitro Enclaves KMS 加密签名技术架构流程
+title Nitro Enclaves KMS - Encryption
 
 participant "Parent Instance" as Parent
 participant "Enclave" as Enclave
